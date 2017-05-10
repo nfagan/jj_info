@@ -1,35 +1,67 @@
 function opts = setup()
 
 % - STATES - %
-STATES.sequence = { 'fixation', 'display_random_vs_info_cues' ...
-  , 'look_to_random_vs_info', 'display_info_cues' };
+STATES.sequence = { 'new_trial', 'fixation', 'display_random_vs_info_cues' ...
+  , 'look_to_random_vs_info', 'display_info_cues', 'reward', 'iti' };
 
 % - SCREEN + WINDOW - %
-SCREEN.index = 0;
-SCREEN.background_color = [ 0 0 0 ];
-[windex, wrect] = Screen( 'OpenWindow', SCREEN.index, SCREEN.background_color, [], 32 );
-
-WINDOW.center = round( [mean(wrect([1 3])), mean(wrect([2 4]))] );
-WINDOW.index = windex;
-WINDOW.rect = wrect;
+SCREEN = ScreenManager();
+WINDOW = SCREEN.open_window( 0, [0 0 0] );
 
 % - IO - %
 IO.edf_file = 'txst.edf';
 IO.edf_folder = '~/Desktop';
+IO.data_file = 'txst.mat';
+IO.data_folder = '~/Desktop';
+IO.stimuli_path = fullfile( pathfor('jj_info'), 'stimuli' );
+
+% assert__file_does_not_exist( fullfile(IO.data_folder, IO.data_file) );
+% assert__file_does_not_exist( fullfile(IO.edf_folder, IO.edf_file) );
+
+% - META - %
+META.monkey = '';
+META.date = '';
+META.session = '';
 
 % - EYE TRACKER - %
 TRACKER = EyeTracker( IO.edf_file, IO.edf_folder, WINDOW.index );
 TRACKER.bypass = true;
 
+% - STRUCTURE - %
+choice_combs = jj_info.util.allcomb( { ...
+    { 'choice' } ...
+  , { 'big', 'small' } ...
+  , { 'rand1', 'rand2' } ...
+  , { {'center-left', 'center-right'}, {'center-right', 'center-left'} }
+} );
+info_combs = jj_info.util.allcomb( { ...
+    { 'info' } ...
+  , { 'big', 'small' } ...
+  , { 'rand1' } ...
+  , { 'center-left', 'center-right' } ...
+} );
+rand_combs = jj_info.util.allcomb( { ...
+    { 'random' } ...
+  , { 'big', 'small' } ...
+  , { 'rand1', 'rand2' } ...
+  , { 'center-left', 'center-right' } ...
+} );
+
+STRUCTURE.block_sequence = [ choice_combs; info_combs; info_combs; rand_combs ];
+
 % - TIMINGS - %
 time_in.task = Inf;
+time_in.trial = Inf;
+time_in.new_trial = 0;
 time_in.fixation = Inf;
 time_in.display_random_vs_info_cues = 0;
-time_in.look_to_random_vs_info = 10;
+time_in.look_to_random_vs_info = 2;
 time_in.display_info_cues = 2;
 time_in.reward = 0;
+time_in.iti = 1;
+time_in.error = 3;
 
-fixations.fix_square = 2;
+fixations.fix_square = .8;
 fixations.receive_info_cue = 1;
 fixations.receive_random_cue = 1;
 fixations.make_choice = 1;
@@ -42,59 +74,91 @@ for i = 1:numel(fs)
 end
 
 % - STIMULI - %
-fix_square = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
+images.info.big = get_images( fullfile(IO.stimuli_path, 'information', 'big') );
+images.info.small = get_images( fullfile(IO.stimuli_path, 'information', 'small') );
+images.random.rand1 = get_images( fullfile(IO.stimuli_path, 'random', 'rand1') );
+images.random.rand2 = get_images( fullfile(IO.stimuli_path, 'random', 'rand2') );
+
+sounds.error = get_sounds( fullfile(IO.stimuli_path, 'sounds', 'error') );
+sounds.reward = get_sounds( fullfile(IO.stimuli_path, 'sounds', 'reward') );
+
+fix_square = WINDOW.Rectangle( [200, 200] );
 fix_square.color = [ 100, 50, 30 ];
 fix_square.put( 'center' );
 fix_square.make_target( TRACKER, fixations.fix_square );
 fix_square.blink( .5 );
 
-receive_info_cue = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-receive_info_cue.color = [ 100, 20, 50 ];
+receive_info_cue = WINDOW.Rectangle( [150, 150] );
+receive_info_cue.color = [ 42, 172, 227 ];
 receive_info_cue.put( 'center' );
 receive_info_cue.make_target( TRACKER, fixations.receive_info_cue );
 
-receive_random_cue = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-receive_random_cue.color = [ 200, 200, 40 ];
+receive_random_cue = WINDOW.Rectangle( [150, 150] );
+receive_random_cue.color = [ 247, 148, 30 ];
 receive_random_cue.put( 'center' );
 receive_random_cue.make_target( TRACKER, fixations.receive_random_cue );
 
-info_cue1 = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-info_cue1.color = [ 200, 200, 10 ];
-info_cue1.put( 'center-left' );
+info_cue = WINDOW.Image( [400, 400], images.info.small.matrices{1} );
+info_cue.color = [ 200, 200, 10 ];
+info_cue.put( 'center-left' );
 
-info_cue2 = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-info_cue2.color = [ 200, 30, 10 ];
-info_cue2.put( 'center-left' );
-
-random_cue1 = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-random_cue1.color = [ 200, 30, 40 ];
-random_cue1.put( 'center-right' );
-
-random_cue2 = Rectangle( WINDOW.index, WINDOW.rect, [200, 200] );
-random_cue2.color = [ 20, 50, 100 ];
-random_cue2.put( 'center-right' );
+random_cue = WINDOW.Image( [400, 400], images.random.rand1.matrices{1} );
+random_cue.color = [ 20, 50, 100 ];
+random_cue.put( 'center-right' );
 
 STIMULI.fix_square = fix_square;
 STIMULI.receive_info_cue = receive_info_cue;
 STIMULI.receive_random_cue = receive_random_cue;
-STIMULI.info_cue1 = info_cue1;
-STIMULI.info_cue2 = info_cue2;
-STIMULI.random_cue1 = random_cue1;
-STIMULI.random_cue2 = random_cue2;
+STIMULI.info_cue = info_cue;
+STIMULI.random_cue = random_cue;
+STIMULI.images = images;
+STIMULI.sounds = sounds;
 
 % - REWARDS - %
-REWARDS.info_cue1 = 100;
-REWARDS.info_cue2 = 300;
+REWARDS.big = 300;
+REWARDS.small = 100;
 REWARDS.random = [ 100, 300 ];
 
 % - STORE - %
 opts.STATES = STATES;
+opts.STRUCTURE = STRUCTURE;
 opts.SCREEN = SCREEN;
 opts.WINDOW = WINDOW;
 opts.IO = IO;
+opts.META = META;
 opts.TRACKER = TRACKER;
 opts.TIMER = TIMER;
 opts.STIMULI = STIMULI;
 opts.REWARDS = REWARDS;
+
+end
+
+function images = get_images(stimuli_path)
+
+imgs = jj_info.util.dirstruct( stimuli_path, '.png' );
+imgs = { imgs(:).name };
+images.matrices = cellfun( @(x) imread(fullfile(stimuli_path, x)) ...
+  , imgs, 'un', false );
+images.filenames = imgs;
+
+end
+
+function sounds = get_sounds(stimuli_path)
+
+sound_files = jj_info.util.dirstruct( stimuli_path, '.wav' );
+sound_files = { sound_files(:).name };
+sounds.matrices = cell( size(sound_files) );
+sounds.fs = cell( size(sound_files) );
+for i = 1:numel(sound_files)
+  [sounds.matrices{i}, sounds.fs{i}] = ...
+    audioread( fullfile(stimuli_path, sound_files{i}) );
+end
+sounds.filenames = sound_files;
+
+end
+
+function assert__file_does_not_exist( file )
+
+assert( exist(file, 'file') ~= 2, 'The file ''%s'' already exists.', file );
 
 end
