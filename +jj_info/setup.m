@@ -1,27 +1,41 @@
 function opts = setup()
 
+addpath( genpath('C:\Repositories\ptb_helpers') );
+addpath( 'C:\Repositories\serial_comm' );
+
 % - STATES - %
 STATES.sequence = { 'new_trial', 'fixation', 'display_random_vs_info_cues' ...
   , 'look_to_random_vs_info', 'display_info_cues', 'reward', 'iti' };
 
 % - SCREEN + WINDOW - %
 SCREEN = ScreenManager();
-WINDOW = SCREEN.open_window( 0, [0 0 0] );
+WINDOW = SCREEN.open_window( 2, [0 0 0] );
 
 % - IO - %
 IO.edf_file = 'txst.edf';
-IO.edf_folder = '~/Desktop';
+IO.edf_folder = 'C:\Users\Plexon\Desktop';
 IO.data_file = 'txst.mat';
 IO.data_folder = '~/Desktop';
-IO.stimuli_path = fullfile( pathfor('jj_info'), 'stimuli' );
 
-% assert__file_does_not_exist( fullfile(IO.data_folder, IO.data_file) );
-% assert__file_does_not_exist( fullfile(IO.edf_folder, IO.edf_file) );
+IO.stimuli_path = 'C:\Repositories\jj_info\stimuli';
+
+jj_info.util.assert__is_valid_path( IO.data_folder );
+assert__file_does_not_exist( fullfile(IO.data_folder, IO.data_file) );
+assert__file_does_not_exist( fullfile(IO.edf_folder, IO.edf_file) );
 
 % - META - %
 META.monkey = '';
 META.date = '';
 META.session = '';
+
+% - SERIAL - %
+port = 'COM4';
+messages = struct( 'message', 'clock_synch', 'char', 'C' );
+reward_chars = { 'A' };
+serial_manager = serial_comm.SerialManager( port, messages, reward_chars );
+serial_manager.start();
+
+SERIAL.serial_manager = serial_manager;
 
 % - EYE TRACKER - %
 TRACKER = EyeTracker( IO.edf_file, IO.edf_folder, WINDOW.index );
@@ -68,10 +82,7 @@ fixations.make_choice = 1;
 
 % - TIMERS - %
 TIMER = Timer();
-fs = fieldnames( time_in );
-for i = 1:numel(fs)
-  TIMER.add_timer( fs{i}, time_in.(fs{i}) );
-end
+TIMER.register( time_in );
 
 % - STIMULI - %
 images.info.big = get_images( fullfile(IO.stimuli_path, 'information', 'big') );
@@ -115,8 +126,8 @@ STIMULI.images = images;
 STIMULI.sounds = sounds;
 
 % - REWARDS - %
-REWARDS.big = 300;
-REWARDS.small = 100;
+REWARDS.big = 600;
+REWARDS.small = 50;
 REWARDS.random = [ 100, 300 ];
 
 % - STORE - %
@@ -129,6 +140,7 @@ opts.META = META;
 opts.TRACKER = TRACKER;
 opts.TIMER = TIMER;
 opts.STIMULI = STIMULI;
+opts.SERIAL = SERIAL;
 opts.REWARDS = REWARDS;
 
 end

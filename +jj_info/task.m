@@ -1,12 +1,13 @@
 function task(opts)
 
-IO =        opts.IO;
-META =      opts.META;
-TIMER =     opts.TIMER;
-TRACKER =   opts.TRACKER;
-STIMULI =   opts.STIMULI;
-STRUCTURE = opts.STRUCTURE;
-REWARDS =   opts.REWARDS;
+IO =              opts.IO;
+META =            opts.META;
+TIMER =           opts.TIMER;
+TRACKER =         opts.TRACKER;
+STIMULI =         opts.STIMULI;
+STRUCTURE =       opts.STRUCTURE;
+REWARDS =         opts.REWARDS;
+serial_manager =  opts.SERIAL.serial_manager;
 
 cstate = 'new_trial';
 
@@ -23,6 +24,11 @@ errors.broke_fixation = false;
 
 block_sequence = STRUCTURE.block_sequence;
 block_number = 1;
+
+n_forced_info = 0;
+n_forced_random = 0;
+n_choice_info = 0;
+n_choice_random = 0;
 
 while ( true )
   
@@ -43,6 +49,33 @@ while ( true )
         DATA(tn).random_location = random_location;
         DATA(tn).errors = errors;
         DATA(tn).events = PROGRESS;
+        if ( ~isempty(chosen_option) )
+          if ( isequal(trial_type, 'choice') )
+            was_choice = true;
+          else was_choice = false;
+          end
+          switch ( chosen_option )
+            case 'info'
+              if ( was_choice )
+                n_choice_info = n_choice_info + 1; 
+              else
+                n_forced_info = n_forced_info + 1;
+              end
+            case 'random'
+              if ( was_choice )
+                n_choice_random = n_choice_random + 1; 
+              else
+                n_forced_random = n_forced_random + 1;
+              end
+          end
+        end
+        clc;
+        fprintf( '\nForced info: %d', n_forced_info );
+        fprintf( '\nForced random: %d', n_forced_random );
+        fprintf( '\nChoice info: %d', n_choice_info );
+        fprintf( '\nChoice random: %d', n_choice_random );
+        fprintf( '\n\n' );
+        disp( DATA(tn) );
       end
       if ( isempty(block_sequence) )
         block_sequence = STRUCTURE.block_sequence;
@@ -272,8 +305,8 @@ while ( true )
   if ( isequal(cstate, 'reward') )
     if ( first_entry )
       PROGRESS.(cstate) = TIMER.get_time( 'task' );
-      TIMER.set_durations( cstate, current_reward/1e3 );
       TIMER.reset_timers( cstate );
+      serial_manager.reward( 'A', current_reward );
       sounds = STIMULI.sounds.reward;
       sound( sounds.matrices{1}, sounds.fs{1} );
       %   deliver_reward( current_reward )
@@ -299,6 +332,8 @@ while ( true )
       first_entry = true;
     end
   end
+  
+  serial_manager.update();
   
   %   Quit if error in EyeLink
   err = TRACKER.check_recording();

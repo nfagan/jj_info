@@ -2,6 +2,7 @@ function cleanup()
 
 sca;
 ListenChar( 0 );
+serial_comm.util.close_ports();
 try
   Eyelink( 'StopRecording' )
 catch err
