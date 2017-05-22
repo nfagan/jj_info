@@ -12,10 +12,10 @@ SCREEN = ScreenManager();
 WINDOW = SCREEN.open_window( 2, [0 0 0] );
 
 % - IO - %
-IO.edf_file = 'txst.edf';
-IO.edf_folder = 'C:\Users\Plexon\Desktop';
-IO.data_file = 'txst.mat';
-IO.data_folder = '~/Desktop';
+IO.edf_file = '05_19TaB.edf';
+IO.edf_folder = 'C:\Repositories\jj_info\data';
+IO.data_file = '05_19TaB.mat';
+IO.data_folder = 'C:\Repositories\jj_info\data';
 
 IO.stimuli_path = 'C:\Repositories\jj_info\stimuli';
 
@@ -24,9 +24,9 @@ assert__file_does_not_exist( fullfile(IO.data_folder, IO.data_file) );
 assert__file_does_not_exist( fullfile(IO.edf_folder, IO.edf_file) );
 
 % - META - %
-META.monkey = '';
-META.date = '';
-META.session = '';
+META.monkey = 'Tarantino';
+META.date = '05/19/17';
+META.session = '2';
 
 % - SERIAL - %
 port = 'COM4';
@@ -39,7 +39,8 @@ SERIAL.serial_manager = serial_manager;
 
 % - EYE TRACKER - %
 TRACKER = EyeTracker( IO.edf_file, IO.edf_folder, WINDOW.index );
-TRACKER.bypass = true;
+TRACKER.bypass = false;
+TRACKER.init();
 
 % - STRUCTURE - %
 choice_combs = jj_info.util.allcomb( { ...
@@ -69,16 +70,16 @@ time_in.trial = Inf;
 time_in.new_trial = 0;
 time_in.fixation = Inf;
 time_in.display_random_vs_info_cues = 0;
-time_in.look_to_random_vs_info = 2;
+time_in.look_to_random_vs_info = 0.6; %2
 time_in.display_info_cues = 2;
 time_in.reward = 0;
 time_in.iti = 1;
 time_in.error = 3;
 
-fixations.fix_square = .8;
-fixations.receive_info_cue = 1;
-fixations.receive_random_cue = 1;
-fixations.make_choice = 1;
+fixations.fix_square = .2; %go to .8 for real task
+fixations.receive_info_cue = .05; %go to 1 for real task
+fixations.receive_random_cue = .05; %go to 1 for real task
+fixations.make_choice = .05; %go to 1 for real task
 
 % - TIMERS - %
 TIMER = Timer();
@@ -94,17 +95,17 @@ sounds.error = get_sounds( fullfile(IO.stimuli_path, 'sounds', 'error') );
 sounds.reward = get_sounds( fullfile(IO.stimuli_path, 'sounds', 'reward') );
 
 fix_square = WINDOW.Rectangle( [200, 200] );
-fix_square.color = [ 100, 50, 30 ];
+fix_square.color = [ 255, 255, 255 ];
 fix_square.put( 'center' );
 fix_square.make_target( TRACKER, fixations.fix_square );
 fix_square.blink( .5 );
 
-receive_info_cue = WINDOW.Rectangle( [150, 150] );
+receive_info_cue = WINDOW.Rectangle( [350, 350] );
 receive_info_cue.color = [ 42, 172, 227 ];
 receive_info_cue.put( 'center' );
 receive_info_cue.make_target( TRACKER, fixations.receive_info_cue );
 
-receive_random_cue = WINDOW.Rectangle( [150, 150] );
+receive_random_cue = WINDOW.Rectangle( [350, 350] );
 receive_random_cue.color = [ 247, 148, 30 ];
 receive_random_cue.put( 'center' );
 receive_random_cue.make_target( TRACKER, fixations.receive_random_cue );

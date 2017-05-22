@@ -258,6 +258,26 @@ while ( true )
     end
     cellfun( @(x) x.draw(), choice_options.stimuli );
     Screen( 'Flip', opts.WINDOW.index );
+% %     if ( made_choice )
+% %       %   MARK: goto: display_info_cues
+% %       cstate = 'display_info_cues';
+% %       errors.broke_choice = false;
+% %       errors.no_choice = false;
+% %       first_entry = true;
+% %     end
+% %     if ( TIMER.duration_met('look_to_random_vs_info') )
+% %       if ( ~made_choice )
+% %         errors.no_choice = true;
+% %         errors.broke_choice = false;
+% %         %   MARK: goto: errors
+% %         cstate = 'error';
+% %       else
+% %         cstate = 'display_info_cues';
+% %         errors.broke_choice = false;
+% %         errors.no_choice = false;
+% %       end
+% %       first_entry = true;
+% %     end
     if ( made_choice && ~cue.in_bounds() )
       %   MARK: goto: error
       errors.broke_choice = true;
@@ -337,7 +357,9 @@ while ( true )
   
   %   Quit if error in EyeLink
   err = TRACKER.check_recording();
-  if ( err ~= 0 ), break; end;
+  if ( err ~= 0 )
+    error( 'Problem with EyelinkRecording' );
+  end
   
   %   Quit if key is pressed
   [key_pressed, ~, ~] = KbCheck();
