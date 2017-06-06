@@ -6,8 +6,8 @@ STATES.sequence = { 'new_trial', 'fixation', 'display_random_vs_info_cues' ...
   , 'display_social_image' };
 
 % - IO - %
-% IO.repo_folder = 'C:\Repositories';
-IO.repo_folder = 'C:\Users\changLab\Repositories';
+IO.repo_folder = 'C:\Repositories';
+% IO.repo_folder = 'C:\Users\changLab\Repositories';
 IO.edf_file = '06_06TaB';
 IO.data_file = '06_06TaB.mat';
 IO.edf_folder = fullfile( IO.repo_folder, 'jj_info', 'data' );
@@ -28,14 +28,14 @@ META.session = '2';
 META.notes = ' 500 choice, 100 initial fix';
 
 % - INTERFACE - %
-INTERFACE.use_eyelink = false;
-INTERFACE.use_arduino = false;
+INTERFACE.use_eyelink = true;
+INTERFACE.use_arduino = true;
 
 IS_JUICE = false;
 
 % - SCREEN + WINDOW - %
 SCREEN = ScreenManager();
-WINDOW = SCREEN.open_window( 0, [0 0 0] );
+WINDOW = SCREEN.open_window( 2, [0 0 0] );
 
 % - SERIAL - %
 port = 'COM4';
